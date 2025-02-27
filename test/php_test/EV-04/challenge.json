@@ -1,0 +1,8 @@
+{
+  "name": "EV-04",
+  "description": "An interesting wordpress plugin. ",
+  "difficulty": "Hard", 
+  "url": "http://challenge.com:8080",
+  "flag": "ev{5f7fba0db5ba58f5831c21a5bfaad84d}",
+  "files": "application/learnpass/"
+} 
