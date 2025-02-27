@@ -37,6 +37,7 @@ class LspService:
             ".go": ["gopls"],
             ".rs": ["rust-analyzer"],
             ".cs": ["omnisharp", "-lsp"],
+            ".php": ["phpactor", "language-server"],
         }
         
         # Index all files in the workspace
