@@ -31,7 +31,7 @@ class LspService:
             ".cpp": ["clangd"],
             ".h": ["clangd"],
             ".hpp": ["clangd"],
-            ".java": ["jdtls"],
+            ".java": ["/home/pavan/jdtls.sh"],
             ".js": ["typescript-language-server", "--stdio"],
             ".ts": ["typescript-language-server", "--stdio"],
             ".go": ["gopls"],
@@ -423,16 +423,25 @@ class LanguageServer:
             return True
             
         try:
-            logger.info(f"Starting language server with command: {self.cmd}")
+            # Adjust command for JDT LS to include workspace directory
+            cmd = self.cmd
+            if self.file_ext == ".java":
+                cmd = self.cmd + [str(self.workspace_dir)]
+            
+            logger.info(f"Starting language server with command: {cmd}")
             
             # Start the language server process
             self.process = subprocess.Popen(
-                self.cmd,
+                cmd,
                 stdin=subprocess.PIPE,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
                 text=False
             )
+            
+            # Log stderr immediately to catch early errors
+            stderr_thread = threading.Thread(target=self._log_stderr, daemon=True)
+            stderr_thread.start()
             
             # Start a thread to read responses
             threading.Thread(target=self._read_responses, daemon=True).start()
@@ -447,6 +456,12 @@ class LanguageServer:
         except Exception as e:
             logger.error(f"Failed to start language server: {e}")
             return False
+    def _log_stderr(self):
+        """Log stderr output from the language server"""
+        while self.is_running():
+            line = self.process.stderr.readline()
+            if line:
+                logger.info(f"STDERR: {line.decode('utf-8').strip()}")
     
     def is_running(self):
         """Check if the server is running"""
@@ -455,10 +470,11 @@ class LanguageServer:
     def initialize(self):
         """Initialize the language server"""
         # Prepare initialize request
+        encoded_root_uri = urllib.parse.quote(str(self.workspace_dir), safe='/:')
         params = {
             "processId": os.getpid(),
             "rootPath": str(self.workspace_dir),
-            "rootUri": f"file://{self.workspace_dir}",
+            "rootUri": f"file://{encoded_root_uri}",
             "capabilities": {
                 "textDocument": {
                     "definition": {"dynamicRegistration": True},
@@ -527,10 +543,12 @@ class LanguageServer:
             logger.error(f"Failed to read file {abs_path}: {e}")
             return False
             
-        # Send textDocument/didOpen notification
+        # Send textDocument/didOpen notification with encoded URI
+        encoded_uri = urllib.parse.quote(str(abs_path), safe='/:')
+        uri = f"file://{encoded_uri}"
         params = {
             "textDocument": {
-                "uri": f"file://{abs_path}",
+                "uri": uri,
                 "languageId": abs_path.suffix[1:],  # Remove the leading dot
                 "version": 1,
                 "text": content
@@ -547,10 +565,11 @@ class LanguageServer:
         if not abs_path.is_absolute():
             abs_path = (self.workspace_dir / file_path).resolve()
             
-        # Send definition request
+        # Send definition request with encoded URI
+        encoded_uri = urllib.parse.quote(str(abs_path), safe='/:')
         params = {
             "textDocument": {
-                "uri": f"file://{abs_path}"
+                "uri": f"file://{encoded_uri}"
             },
             "position": {
                 "line": line,
@@ -570,10 +589,11 @@ class LanguageServer:
         if not abs_path.is_absolute():
             abs_path = (self.workspace_dir / file_path).resolve()
             
-        # Send references request
+        # Send references request with encoded URI
+        encoded_uri = urllib.parse.quote(str(abs_path), safe='/:')
         params = {
             "textDocument": {
-                "uri": f"file://{abs_path}"
+                "uri": f"file://{encoded_uri}"
             },
             "position": {
                 "line": line,
@@ -736,6 +756,7 @@ class LanguageServer:
                 # Read the content
                 content = self.process.stdout.read(content_length)
                 if content:
+                    logger.info(f"RAW RESPONSE: {content.decode('utf-8')}")
                     try:
                         response = json.loads(content.decode('utf-8'))
                         self.response_queue.put(response)
