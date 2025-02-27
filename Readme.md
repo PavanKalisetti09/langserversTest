@@ -160,6 +160,36 @@ Check if the PHP language server is working:
 phpactor language-server --version
 ```
 
+# JavaScript and TypeScript Language Server Installation
+
+## Step 1: Install Node.js and npm
+
+### Check if Node.js is Installed
+```sh
+node -v
+```
+
+### If Not Installed, Install Node.js and npm
+```sh
+sudo apt update
+sudo apt install nodejs npm -y
+```
+
+### Verify Installation
+```sh
+node -v  # Example output: v20.x.x
+npm -v   # Example output: 10.x.x
+```
+
+## Step 2: Install TypeScript Language Server
+```sh
+sudo npm install -g typescript-language-server typescript
+```
+
+### Verify Installation
+```sh
+typescript-language-server --version
+```
 
 
 # Code Navigation Commands
@@ -200,5 +230,28 @@ python code_browser_api.py --workspace "/home/pavan/Documents/electrovolt/testin
 python code_browser_api.py --workspace "/home/pavan/Documents/electrovolt/testing_langser (copy)/test/python_test" goto_references detect_stance
 ```
 
+## JavaScript
+
+### Go to Definition
+```sh
+python code_browser_api.py --workspace "/home/pavan/Documents/electrovolt/testing_langser (copy)/test/javascript_test" goto_definition sayHello
+```
+
+### Go to References
+```sh
+python code_browser_api.py --workspace "/home/pavan/Documents/electrovolt/testing_langser (copy)/test/javascript_test" goto_references sayHello
+```
+
+## TypeScript
+
+### Go to Definition
+```sh
+python code_browser_api.py --workspace "/home/pavan/Documents/electrovolt/testing_langser (copy)/test/typescript_test" goto_definition sayHello
+```
+
+### Go to References
+```sh
+python code_browser_api.py --workspace "/home/pavan/Documents/electrovolt/testing_langser (copy)/test/typescript_test" goto_references sayHello
+```
 
 
